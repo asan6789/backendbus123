@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bus Tracking System - Punjab</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body { font-family: Arial, sans-serif; background: #f7f9fa; }
+        #container { max-width: 900px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px #0002; padding: 24px; }
+        h1 { text-align: center; color: #2b5876; }
+        #map { height: 400px; width: 100%; border-radius: 8px; border: 2px solid #2b5876; display: none; }
+        #busLocation { margin: 20px 0; font-size: 1.1em; text-align: center; display: none; }
+        #loginForm { max-width: 350px; margin: 60px auto 0 auto; background: #e3ecf7; padding: 32px; border-radius: 10px; box-shadow: 0 2px 16px #0002; }
+        #loginForm input[type="text"] { width: 100%; padding: 10px; margin: 16px 0; border-radius: 5px; border: 1px solid #bbb; }
+        #loginForm button { width: 100%; padding: 10px; background: #2b5876; color: #fff; border: none; border-radius: 5px; font-size: 1em; }
+        #welcome { text-align: center; color: #2b5876; margin-bottom: 20px; display: none; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>Bus Tracking System</h1>
+        <div id="loginForm">
+            <h2>Login / Register</h2>
+            <input type="text" id="userId" placeholder="Enter your ID" required />
+            <button onclick="login()">Enter</button>
+        </div>
+        <div id="welcome"></div>
+        <div id="map"></div>
+        <div id="busLocation">
+            <strong>Bus Location:</strong> Latitude: <span id="latitude"></span>, Longitude: <span id="longitude"></span>
+        </div>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let map, busMarker, socket;
+        function login() {
+            const userId = document.getElementById('userId').value.trim();
+            if (!userId) {
+                alert('Please enter your ID.');
+                return;
+            }
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('welcome').style.display = 'block';
+            document.getElementById('welcome').innerHTML = `<h2>Welcome, ${userId}!</h2><h3>Bus Tracking System on Punjab Only</h3>`;
+            document.getElementById('map').style.display = 'block';
+            document.getElementById('busLocation').style.display = 'block';
+
+            // Initialize map for Punjab
+            map = L.map('map').setView([31.1471, 75.3412], 8);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            busMarker = L.marker([31.1471, 75.3412]).addTo(map);
+
+            // Connect to socket.io
+            socket = io();
+            socket.emit('userInfo', { id: userId });
+
+            socket.on('busLocation', (location) => {
+                document.getElementById('latitude').textContent = location.latitude.toFixed(6);
+                document.getElementById('longitude').textContent = location.longitude.toFixed(6);
+                busMarker.setLatLng([location.latitude, location.longitude]);
+            });
+        }
+    </script>
+</body>
+</html>
